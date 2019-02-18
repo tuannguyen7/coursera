@@ -3,6 +3,8 @@ import sys
 import math
 import random
 
+# ToDo: TLE on test 22/23, follow the hint from assigment to optimal it.
+
 # sortX_x, sortX_y: phan tu x, y duoc sort theo x
 # sortY_x, sortY_y: phan tu x, y duoc sort theo y
 
