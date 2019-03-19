@@ -1,3 +1,4 @@
+
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -6,6 +7,7 @@ import java.util.StringTokenizer;
 
 public class BuildHeap {
     private int[] data;
+    
     private List<Swap> swaps;
 
     private FastScanner in;
@@ -32,25 +34,52 @@ public class BuildHeap {
 
     private void generateSwaps() {
       swaps = new ArrayList<Swap>();
-      // The following naive implementation just sorts 
-      // the given sequence using selection sort algorithm
-      // and saves the resulting sequence of swaps.
-      // This turns the given array into a heap, 
-      // but in the worst case gives a quadratic number of swaps.
-      //
-      // TODO: replace by a more efficient implementation
-      for (int i = 0; i < data.length; ++i) {
-        for (int j = i + 1; j < data.length; ++j) {
-          if (data[i] > data[j]) {
-            swaps.add(new Swap(i, j));
-            int tmp = data[i];
-            data[i] = data[j];
-            data[j] = tmp;
-          }
-        }
-      }
+      for (int i = data.length/2; i >= 0; i--)
+          siftDownOrigin(i);
     }
 
+    private void siftDownOrigin(int index) {
+        int leftIndex = index*2+1;
+        int rightIndex = index*2+2;
+        int newIndex = index;
+        if (rightIndex < data.length && data[newIndex] > data[rightIndex])
+            newIndex = rightIndex;  // rightIndex
+        if (leftIndex < data.length && data[newIndex] > data[leftIndex])
+            newIndex = leftIndex;   // leftIndex
+        if (newIndex != index) {
+            swap(newIndex, index);
+            siftDownOrigin(newIndex);
+        }
+    }
+    
+    
+    private void siftUp(int index) {
+        int parentIndex = (index-1)/2;
+        while (data[index] < data[parentIndex] && index > 0) {
+//          int tmp = heapData[index];
+//          heapData[index] = heapData[parentIndex];
+//          heapData[parentIndex] = tmp;
+            swap(index, parentIndex);
+            index = parentIndex;
+            parentIndex = (index-1)/2;
+        }
+    }
+    
+    private int comparePriority(int i, int j) {
+        if (data[i] < data[j])
+            return 1;
+        else if (data[i] > data[j])
+            return -1;
+        return 0;
+    }
+    
+    private void swap(int i1, int i2) {
+        int tmp = data[i1];
+        data[i1] = data[i2];
+        data[i2] = tmp;
+        swaps.add(new Swap(i1, i2));
+    }
+    
     public void solve() throws IOException {
         in = new FastScanner();
         out = new PrintWriter(new BufferedOutputStream(System.out));

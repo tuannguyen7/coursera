@@ -1,3 +1,4 @@
+
 import java.io.*;
 import java.util.Arrays;
 import java.util.Locale;
@@ -35,8 +36,8 @@ public class MergingTables {
         }
         Table getParent() {
             // find super parent and compress path
-        	if (this != parent)
-        		parent = parent.getParent();
+            if (this != parent)
+                parent = parent.getParent();
             return parent;
         }
     }
@@ -44,8 +45,8 @@ public class MergingTables {
     int maximumNumberOfRows = -1;
 
     void merge(int desIndex, int srcIndex, Table[] tables) {
-    	Table destination = tables[desIndex];
-    	Table source = tables[srcIndex];
+        Table destination = tables[desIndex];
+        Table source = tables[srcIndex];
         Table realDestination = destination.getParent();
         Table realSource = source.getParent();
         if (realDestination == realSource) {
@@ -55,15 +56,15 @@ public class MergingTables {
         // use rank heuristic
         // update maximumNumberOfRows
         if (destination.rank > realSource.rank) {
-        	realSource.parent = realDestination;	// noi source vao des
-        	realDestination.numberOfRows += realSource.numberOfRows;
-        	maximumNumberOfRows = Math.max(maximumNumberOfRows, realDestination.numberOfRows);
+            realSource.parent = realDestination;    // noi source vao des
+            realDestination.numberOfRows += realSource.numberOfRows;
+            maximumNumberOfRows = Math.max(maximumNumberOfRows, realDestination.numberOfRows);
         } else {
-        	realDestination.parent = realSource;	// noi parent vao source
-        	if (realDestination.rank == realSource.rank)
-        		realSource.rank += 1;
-        	realSource.numberOfRows += realDestination.numberOfRows;
-        	maximumNumberOfRows = Math.max(maximumNumberOfRows, realSource.numberOfRows);
+            realDestination.parent = realSource;    // noi parent vao source
+            if (realDestination.rank == realSource.rank)
+                realSource.rank += 1;
+            realSource.numberOfRows += realDestination.numberOfRows;
+            maximumNumberOfRows = Math.max(maximumNumberOfRows, realSource.numberOfRows);
         }
     }
 
@@ -130,4 +131,3 @@ public class MergingTables {
         }
     }
 }
-
