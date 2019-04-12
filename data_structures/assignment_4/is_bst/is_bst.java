@@ -37,7 +37,8 @@ public class is_bst {
 
         int nodes;
         Node[] tree;
-
+        int curMax = Integer.MIN_VALUE;
+        
         void read() throws IOException {
             FastScanner in = new FastScanner();
             nodes = in.nextInt();
@@ -52,40 +53,23 @@ public class is_bst {
             if (tree.length == 0)
                 return true;
             Node root = tree[0];
-            return isBinary(root, Integer.MAX_VALUE, true);
-            //return isBinary(tree[root.left], root.key, true) && isBinary(tree[root.right], root.key, false);
+            return inOrder(root);
         }
-
-        boolean isBinary(Node n, int parentKey, boolean leftSide) {
-            boolean leftResult = true;
-            boolean rightResult = true;
+        
+        boolean inOrder(Node n) {
+            boolean left = true;
             if (n.left != -1) {
-                if (tree[n.left].key >= n.key)
-                    return false;
-                if (leftSide) {
-                    if (tree[n.left].key >= parentKey)
-                        return false;
-                } else {
-                    if (tree[n.left].key <= parentKey)
-                        return false;
-                }               
-                leftResult = isBinary(tree[n.left], n.key, true);
+                left = inOrder(tree[n.left]);
             }
-            if (!leftResult)
+            if (!left)
                 return false;
+            if (n.key < curMax)
+                return false;
+            curMax = n.key;
             if (n.right != -1) {
-                if (tree[n.right].key <= n.key)
-                    return false;
-                if (leftSide) {
-                    if (tree[n.right].key >= parentKey)
-                        return false;
-                } else {
-                    if (tree[n.right].key <= parentKey)
-                        return false;
-                }   
-                rightResult = isBinary(tree[n.right], n.key, false);
+                return inOrder(tree[n.right]);
             }
-            return leftResult && rightResult;
+            return true;
         }
         
         public boolean solve() {
@@ -115,3 +99,4 @@ public class is_bst {
         }
     }
 }
+
