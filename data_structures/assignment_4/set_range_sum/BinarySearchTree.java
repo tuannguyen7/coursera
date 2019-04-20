@@ -1,20 +1,21 @@
+import java.io.*;
+import java.util.*;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.util.StringTokenizer;
+public class SetRangeSum {
 
-public class BinarySearchTree {
+    BufferedReader br;
+    PrintWriter out;
+    StringTokenizer st;
+    boolean eof;
 
-	private Vertex root;
-	
-	class Vertex {
+    // Splay tree implementation
+
+    // Vertex of a splay tree
+    class Vertex {
         int key;
         // Sum of all the keys in the subtree - remember to update
         // it after each operation that changes the tree.
         long sum;
-        long leftSum;
         Vertex left;
         Vertex right;
         Vertex parent;
@@ -27,6 +28,147 @@ public class BinarySearchTree {
             this.parent = parent;
         }
     }
+
+    void update(Vertex v) {
+        if (v == null) return;
+        v.sum = v.key + (v.left != null ? v.left.sum : 0) + (v.right != null ? v.right.sum : 0);
+        if (v.left != null) {
+            v.left.parent = v;
+        }
+        if (v.right != null) {
+            v.right.parent = v;
+        }
+    }
+
+    void smallRotation(Vertex v) {
+        Vertex parent = v.parent;
+        if (parent == null) {
+            return;
+        }
+        Vertex grandparent = v.parent.parent;
+        if (parent.left == v) {
+            Vertex m = v.right;
+            v.right = parent;
+            parent.left = m;
+        } else {
+            Vertex m = v.left;
+            v.left = parent;
+            parent.right = m;
+        }
+        update(parent);
+        update(v);
+        v.parent = grandparent;
+        if (grandparent != null) {
+            if (grandparent.left == parent) {
+                grandparent.left = v;
+            } else {
+                grandparent.right = v;
+            }
+        }
+    }
+
+    void bigRotation(Vertex v) {
+        if (v.parent.left == v && v.parent.parent.left == v.parent) {
+            // Zig-zig
+            smallRotation(v.parent);
+            smallRotation(v);
+        } else if (v.parent.right == v && v.parent.parent.right == v.parent) {
+            // Zig-zig
+            smallRotation(v.parent);
+            smallRotation(v);
+        } else {
+            // Zig-zag
+            smallRotation(v);
+            smallRotation(v);
+        }
+    }
+
+    // Makes splay of the given vertex and returns the new root.
+    Vertex splay(Vertex v) {
+        if (v == null) return null;
+        while (v.parent != null) {
+            if (v.parent.parent == null) {
+                smallRotation(v);
+                break;
+            }
+            bigRotation(v);
+        }
+        return v;
+    }
+
+    class VertexPair {
+        Vertex left;
+        Vertex right;
+        VertexPair() {
+        }
+        VertexPair(Vertex left, Vertex right) {
+            this.left = left;
+            this.right = right;
+        }
+    }
+
+    // Searches for the given key in the tree with the given root
+    // and calls splay for the deepest visited node after that.
+    // Returns pair of the result and the new root.
+    // If found, result is a pointer to the node with the given key.
+    // Otherwise, result is a pointer to the node with the smallest
+    // bigger key (next value in the order).
+    // If the key is bigger than all keys in the tree,
+    // then result is null.
+    VertexPair find(Vertex root, int key) {
+        Vertex v = root;
+        Vertex last = root;
+        Vertex next = null;
+        while (v != null) {
+            if (v.key >= key && (next == null || v.key < next.key)) {
+                next = v;
+            }
+            last = v;
+            if (v.key == key) {
+                break;
+            }
+            if (v.key < key) {
+                v = v.right;
+            } else {
+                v = v.left;
+            }
+        }
+        root = splay(last);
+        return new VertexPair(next, root);
+    }
+
+    VertexPair split(Vertex root, int key) {
+        VertexPair result = new VertexPair();
+        VertexPair findAndRoot = find(root, key);
+        root = findAndRoot.right;
+        result.right = findAndRoot.left;
+        if (result.right == null) {
+            result.left = root;
+            return result;
+        }
+        result.right = splay(result.right);
+        result.left = result.right.left;
+        result.right.left = null;
+        if (result.left != null) {
+            result.left.parent = null;
+        }
+        update(result.left);
+        update(result.right);
+        return result;
+    }
+
+    Vertex merge(Vertex left, Vertex right) {
+        if (left == null) return right;
+        if (right == null) return left;
+        while (right.left != null) {
+            right = right.left;
+        }
+        right = splay(right);
+        right.left = left;
+        update(right);
+        return right;
+    }
+
 	/////////////////////////////////////////////////////
 	// binary search tree basic operations
 	
@@ -54,7 +196,7 @@ public class BinarySearchTree {
 	/**
 	 * return Vertex with given key. if not found, return nearest
 	 * */
-	Vertex find(int key) {
+	Vertex bFind(int key) {
 		Vertex iter = root;
 		if (root == null)
 			return null;
@@ -73,77 +215,75 @@ public class BinarySearchTree {
 	}
 	
 	boolean isKeyInBST(int key) {
-		Vertex found = find(key);
+		Vertex found = bFind(key);
 		return found !=null && found.key == key;
 	}
 	
 	/**
 	 * insert key into BST.
 	 * */
-	Vertex insert(int key) {
-		Vertex found = find(key);
+	Vertex bInsert(int key) {
+		Vertex found = bFind(key);
 		Vertex newNode = new Vertex(key, 0, null, null, found);
 		if (found == null) {
 			root = newNode;
 			return newNode;
 		}
-		
-		if (found.key < key) {
+		if (found.key == key) {
+			
+		} else if (found.key < key) {
 			found.right = newNode; 
 		} else {
 			found.left = newNode;
 		}
-		update(newNode);
+		//update(newNode);
 		return newNode;
 	}
 	
-	/**
-	 * update leftSum and its parent
-	 * */
-	void update(Vertex v) {
-		if (v == null)
-			return;
-		v.leftSum = (v.left != null ? v.left.key : 0) + (v.right != null ? v.right.key : 0);
-		update(v.parent);
-	}
+//	void erase(int key) {
+//		bDelete(key);
+//	}
 	
-	
-	void erase(int key) {
-		delete(key);
-	}
-	
-	void delete(int key) {
-		Vertex found = find(key);
+	void bDelete(int key) {
+		Vertex found = bFind(key);
 		if (found == null || found.key != key)
 			return;	// not found
+		
 		if (found.right == null) {
-			Vertex oldPar = found.parent;
 			// promote found.left
 			if (found != root) { // not root
+				if (found.left != null) {
+					found.left.parent = found.parent;
+				}
 				if (found.parent.left == found) {	// found is left child of its parent
 					found.parent.left = found.left;
 				} else {	// found is right child of its parent
-					found.parent.right = found.right;
+					found.parent.right = found.left;
 				}
 			} else {
 				// found is root
 				root = found.left;
+				if (root != null)
+					root.parent = null;
 			}
-			update(oldPar);
+			//update(oldPar);
 		} else {
-			Vertex next = next(found); // next nerver null this case
-			Vertex oldPar = next.parent;
+			Vertex next = next(found); // next nerver null this case because it has right child
 
 			// next.left always null this case
 			// promote next.right
 			if (next == next.parent.left) {
+				if (next.right != null) {
+					next.right.parent = next.parent;
+				}
 				next.parent.left = next.right;
 			} else {
+				// next is right child of found
 				next.parent.right = next.right;
 			}
 			// replace next to found
 			replace(next, found);
-			update(oldPar);
+			//update(oldPar);
 		}
 	}
 	
@@ -153,30 +293,77 @@ public class BinarySearchTree {
 	void replace(Vertex a, Vertex b) {
 		a.parent = b.parent;
 		a.left = b.left;
+		if (a.left != null)
+			a.left.parent = a;
 		a.right = b.right;
+		if (a.right != null)
+			a.right.parent = a;
 		if (b == root)
 			root = a;
 		else {
 			if (b.parent.left == b)
 				b.parent.left = a;
 			else
-				b.parent.right = b;
+				b.parent.right = a;
 		}
 	}
 	
-	long sum(int from, int to) {
-//        VertexPair leftMiddle = split(root, from);
-//        Vertex left = leftMiddle.left;
-//        Vertex middle = leftMiddle.right;
-//        VertexPair middleRight = split(middle, to + 1);
-//        middle = middleRight.left;
-//        Vertex right = middleRight.right;
+    
+    // Code that uses splay tree to solve the problem
+
+    Vertex root = null;
+
+    void insert(int x) {
+        Vertex left = null;
+        Vertex right = null;
+        Vertex new_vertex = null;
+        VertexPair leftRight = split(root, x);
+        left = leftRight.left;
+        right = leftRight.right;
+        if (right == null || right.key != x) {
+            new_vertex = new Vertex(x, x, null, null, null);
+        }
+        root = merge(merge(left, new_vertex), right);
+    }
+
+    
+    
+    void erase(int x) {
+        // Implement erase yourself
+    	Vertex found = bFind(x);
+    	if (found == null)	// not found
+    		return;
+    	Vertex next = next(found);
+    	splay(next);
+    	splay(found);
+    	bDelete(found.key);
+    }
+
+    boolean find(int x) {
+        // Implement find yourself
+    	VertexPair pair = find(root, x);
+    	Vertex found = pair.left;
+    	root = pair.right;
+    	if (found == null || found.key != x)
+    		return false;
+        return true;
+    }
+
+    long sum(int from, int to) {
+        VertexPair leftMiddle = split(root, from);
+        Vertex left = leftMiddle.left;
+        Vertex middle = leftMiddle.right;
+        VertexPair middleRight = split(middle, to + 1);
+        middle = middleRight.left;
+        Vertex right = middleRight.right;
+        //long ans = 0;
+        // Complete the implementation of sum
         if (from > to) {
 			return 0;
 		}
         long ans = 0;
-        Vertex startV = find(from);
-
+        Vertex startV = bFind(from);
+        
         while (startV != null && startV.key <= to) {
         	if (startV.key < from) {
         		startV = next(startV);
@@ -187,45 +374,12 @@ public class BinarySearchTree {
         }
         
         return ans;
+        //return ans;
     }
-	
-	// checking
-	
-    boolean isBinarySearchTree() {
-        // Implement correct algorithm here
-        if (root == null)
-            return true;
-        return inOrder(root);
-    }
-    
-    long curMax = Integer.MIN_VALUE;
-    
-    boolean inOrder(Vertex n) {
-        boolean left = true;
-        if (n.left != null) {
-            left = inOrder(n.left);
-        }
-        if (!left)
-            return false;
-        if (n.key < curMax)
-            return false;
-        curMax = n.key;
-        if (n.right != null) {
-            return inOrder(n.right);
-        }
-        return true;
-    }
-    
-    ////////////////////////////////////////////////////
-    // input output
-    
+
+
     public static final int MODULO = 1000000001;
-    
-    BufferedReader br;
-    PrintWriter out;
-    StringTokenizer st;
-    boolean eof;
-    
+
     void solve() throws IOException {
         int n = nextInt();
         int last_sum_result = 0;
@@ -242,7 +396,7 @@ public class BinarySearchTree {
                 } break;
                 case '?' : {
                     int x = nextInt();
-                    out.println(isKeyInBST((x + last_sum_result) % MODULO) ? "Found" : "Not found");
+                    out.println(find((x + last_sum_result) % MODULO) ? "Found" : "Not found");
                 } break;
                 case 's' : {
                     int l = nextInt();
@@ -254,16 +408,16 @@ public class BinarySearchTree {
             }
         }
     }
-    
-    public BinarySearchTree() throws IOException {
-    	br = new BufferedReader(new InputStreamReader(System.in));
+
+    SetRangeSum() throws IOException {
+        br = new BufferedReader(new InputStreamReader(System.in));
         out = new PrintWriter(System.out);
         solve();
         out.close();
-	}
-    
+    }
+
     public static void main(String[] args) throws IOException {
-        new BinarySearchTree();
+        new SetRangeSum();
     }
 
     String nextToken() {
@@ -284,6 +438,4 @@ public class BinarySearchTree {
     char nextChar() throws IOException {
         return nextToken().charAt(0);
     }
-    
-    
 }
