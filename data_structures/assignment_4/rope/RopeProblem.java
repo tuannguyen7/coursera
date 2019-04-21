@@ -1,7 +1,11 @@
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Stack;
 import java.util.StringTokenizer;
 
 public class RopeProblem {
@@ -311,7 +315,42 @@ public class RopeProblem {
 		// return 0;
 	}
 
-	// inorder update
+	// inorder update iterator version
+	void inorderUpdate(Vertex vertex, int sub) {
+		if (vertex == null) 
+            return; 
+  
+        Stack<Vertex> s = new Stack<Vertex>(); 
+        Vertex curr = vertex; 
+  
+        // traverse the tree 
+        while (curr != null || s.size() > 0) 
+        { 
+  
+            /* Reach the left most Node of the 
+            curr Node */
+            while (curr !=  null) 
+            { 
+                /* place pointer to a tree node on 
+                   the stack before traversing 
+                  the node's left subtree */
+                s.push(curr); 
+                curr = curr.left; 
+            } 
+  
+            /* Current must be NULL at this point */
+            curr = s.pop(); 
+  
+            curr.key -= sub;
+            /* we have visited the node and its 
+               left subtree.  Now, it's right 
+               subtree's turn */
+            curr = curr.right;
+            update(curr);
+        } 
+	}
+	
+	// inorder update iterator version	
 	void updateKey(Vertex v, int sub) {
 		if (v == null)
 			return;
@@ -333,6 +372,22 @@ public class RopeProblem {
 		s = t.substring(0, k) + s.substring(i, j + 1) + t.substring(k);
 	}
 
+	void debug(Vertex v) {
+		List<Integer> keys = new ArrayList<>();
+		List<Character> letters = new ArrayList<>();
+		debugKey(v, keys, letters);
+		;
+	}
+	
+	void debugKey(Vertex v, List<Integer> keys, List<Character> letters ) {
+		if (v == null)
+			return;
+		debugKey(v.left, keys, letters);
+		keys.add(v.key);
+		letters.add(v.letter);
+		debugKey(v.right, keys, letters);
+	}
+	
 	void fastProcess(int i, int j, int k) {
 		// Replace this code with a faster implementation
 		VertexPair pair = split(root, i);	// split(0, i) 0-(i-1) 	i-max
@@ -343,16 +398,21 @@ public class RopeProblem {
 		Vertex right = pair.right;
 		middle = pair.left;
 
-		updateKey(right, j-i+1);	// update bat dau tu i
-		
+		//updateKey(right, j-i+1);	// update bat dau tu i
+		inorderUpdate(right, j-i+1);
+		//debug(right);
 		Vertex remainRoot = merge(left, right);
 		VertexPair pair2 = split(remainRoot, k);
 		left = pair2.left;
 		right = pair2.right;
-		updateKey(middle, i - k);		// update thu tu moi cho middle
+		//debug(middle);
+		//updateKey(middle, i - k);		// update thu tu moi cho middle
+		inorderUpdate(middle, i - k);		// update thu tu moi cho middle
+		//debug(middle);
 		Vertex tmpRoot = merge(left, middle);	
 		
-		updateKey(right, i-j+1); // update thu tu moi cho right
+		//updateKey(right, i-j-1); // update thu tu moi cho right
+		inorderUpdate(right, i-j-1); // update thu tu moi cho right
 		root = merge(tmpRoot, right);
 	}
 	
@@ -364,6 +424,30 @@ public class RopeProblem {
 		StringBuilder finalString = new StringBuilder();
 		collectResult(root, finalString);
 		return finalString.toString();
+	}
+	
+	String inorderGetResult() {
+		if (root == null) 
+            return ""; 
+  
+        Stack<Vertex> s = new Stack<Vertex>(); 
+        Vertex curr = root; 
+        StringBuilder result = new StringBuilder();
+        // traverse the tree 
+        while (curr != null || s.size() > 0) 
+        { 
+  
+            while (curr !=  null) 
+            { 
+                s.push(curr); 
+                curr = curr.left; 
+            } 
+            
+            curr = s.pop(); 
+            result.append(curr.letter);
+            curr = curr.right; 
+        }
+        return result.toString();
 	}
 	
 	void collectResult(Vertex v, StringBuilder finalString) {
@@ -412,9 +496,12 @@ public class RopeProblem {
 			int k = in.nextInt();
 			//process(i, j, k);
 			fastProcess(i, j, k);
+			//out.println(myResult());
+			//out.print(b);
+			//debug(root);
 		}
 		//out.println(result());
-		out.print(myResult());
+		out.print(inorderGetResult());
 		out.close();
 	}
 }
