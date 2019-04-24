@@ -16,15 +16,15 @@ public class RopeProblem {
 		int key;
 		// Sum of all the keys in the subtree - remember to update
 		// it after each operation that changes the tree.
-		long sum;
+		int size;
 		char letter;
 		Vertex left;
 		Vertex right;
 		Vertex parent;
 
-		Vertex(int key, long sum, char letter, Vertex left, Vertex right, Vertex parent) {
+		Vertex(int key, int size, char letter, Vertex left, Vertex right, Vertex parent) {
 			this.key = key;
-			this.sum = sum;
+			this.size = size;
 			this.left = left;
 			this.right = right;
 			this.parent = parent;
@@ -35,7 +35,7 @@ public class RopeProblem {
 	void update(Vertex v) {
 		if (v == null)
 			return;
-		v.sum = v.key + (v.left != null ? v.left.sum : 0) + (v.right != null ? v.right.sum : 0);
+		v.size = 1 + (v.left != null ? v.left.size : 0) + (v.right != null ? v.right.size : 0);
 		if (v.left != null) {
 			v.left.parent = v;
 		}
@@ -154,6 +154,51 @@ public class RopeProblem {
 		return new VertexPair(next, root);
 	}
 
+	/**
+	 * k - element thu bao nhieu cua day
+	 * */
+	Vertex orderStatistic(Vertex v, int key) {
+		while (v != null) {
+			int s = v.left != null ? v.left.size : 0;
+			if (key == s + 1)
+				return v;
+			if (key < s + 1) {
+				v = v.left;
+			} else {
+				key = key - s - 1;
+				v = v.right;
+			}
+		}
+		return null;
+	}
+	
+	VertexPair split2(Vertex root, int key) {
+		VertexPair result = new VertexPair();
+		Vertex found = orderStatistic(root, key);
+		result.right = found;
+		if (found == null) { // key vuot qua
+			result.left = root;
+			return result;
+		} 
+		
+//		VertexPair findAndRoot = find(root, key);
+//		root = findAndRoot.right;
+//		result.right = findAndRoot.left;
+//		if (result.right == null) {
+//			result.left = root;
+//			return result;
+//		}
+		result.right = splay(result.right);
+		result.left = result.right.left;
+		result.right.left = null;
+		if (result.left != null) {
+			result.left.parent = null;
+		}
+		update(result.left);
+		update(result.right);
+		return result;
+	}
+
 	VertexPair split(Vertex root, int key) {
 		VertexPair result = new VertexPair();
 		VertexPair findAndRoot = find(root, key);
@@ -173,7 +218,7 @@ public class RopeProblem {
 		update(result.right);
 		return result;
 	}
-
+	
 	Vertex merge(Vertex left, Vertex right) {
 		if (left == null)
 			return right;
@@ -243,48 +288,9 @@ public class RopeProblem {
 		left = leftRight.left;
 		right = leftRight.right;
 		if (right == null || right.key != x) {
-			new_vertex = new Vertex(x, x, letter, null, null, null);
+			new_vertex = new Vertex(x, x+1, letter, null, null, null);
 		}
 		root = merge(merge(left, new_vertex), right);
-	}
-
-	void erase(int x) {
-		// Implement erase yourself
-		Vertex found = bFind(x);
-		if (found == null || found.key != x) // not found
-			return;
-		Vertex next = next(found);
-		if (next != null) {
-			splay(next);
-			splay(found);
-			// after doing 2 splay, next.left = null
-			// delete found and promote next
-			root = next;
-			next.parent = null;
-			next.left = found.left;
-			if (next.left != null)
-				next.left.parent = next;
-			update(root);
-		} else {
-			// this case found.right = null because next = null
-			if (found == root) {
-				root = found.left;
-				if (root != null)
-					root.parent = null;
-				update(root);
-			} else {
-				Vertex parent = found.parent;
-				Vertex foundLeft = found.left;
-				if (parent.left == found) {
-					parent.left = foundLeft;
-				} else {
-					parent.right = foundLeft;
-				}
-				if (foundLeft != null)
-					foundLeft.parent = parent;
-				update(parent);
-			}
-		}
 	}
 
 	boolean find(int x) {
@@ -295,24 +301,6 @@ public class RopeProblem {
 		if (found == null || found.key != x)
 			return false;
 		return true;
-	}
-
-	long sum(int from, int to) {
-		VertexPair leftMiddle = split(root, from);
-		Vertex left = leftMiddle.left;
-		Vertex middle = leftMiddle.right;
-		VertexPair middleRight = split(middle, to + 1);
-		middle = middleRight.left;
-		Vertex right = middleRight.right;
-		long ans = 0;
-		// Complete the implementation of sum
-		if (middle != null) {
-			ans = middle.sum;// - left.sum;
-		}
-		Vertex middleRight1 = merge(middle, right);
-		merge(left, middleRight1);
-		return ans;
-		// return 0;
 	}
 
 	// inorder update iterator version
@@ -349,19 +337,7 @@ public class RopeProblem {
             update(curr);
         } 
 	}
-	
-	// inorder update iterator version	
-	void updateKey(Vertex v, int sub) {
-		if (v == null)
-			return;
-		updateKey(v.left, sub);
-		v.key -= sub;
-		updateKey(v.right, sub);
-		update(v);
-		//return key + 1;
-	}
-	
-	
+		
 	///// Rope solution
 	String s;
 	Vertex root = null;
@@ -379,11 +355,28 @@ public class RopeProblem {
 		;
 	}
 	
+	void debug2(Vertex v) {
+		List<Integer> keys = new ArrayList<>();
+		List<Character> letters = new ArrayList<>();
+		debugSize(v, keys, letters);
+		;
+	}
+	
+	
 	void debugKey(Vertex v, List<Integer> keys, List<Character> letters ) {
 		if (v == null)
 			return;
 		debugKey(v.left, keys, letters);
 		keys.add(v.key);
+		letters.add(v.letter);
+		debugKey(v.right, keys, letters);
+	}
+	
+	void debugSize(Vertex v, List<Integer> keys, List<Character> letters ) {
+		if (v == null)
+			return;
+		debugKey(v.left, keys, letters);
+		keys.add(v.left != null ? v.left.size : 0);
 		letters.add(v.letter);
 		debugKey(v.right, keys, letters);
 	}
@@ -398,15 +391,13 @@ public class RopeProblem {
 		Vertex right = pair.right;
 		middle = pair.left;
 
-		//updateKey(right, j-i+1);	// update bat dau tu i
-		inorderUpdate(right, j-i+1);
+		inorderUpdate(right, j-i+1);	// khong can update nua
 		//debug(right);
 		Vertex remainRoot = merge(left, right);
-		VertexPair pair2 = split(remainRoot, k);
+		VertexPair pair2 = split(remainRoot, k + j - i + 1);
 		left = pair2.left;
 		right = pair2.right;
 		//debug(middle);
-		//updateKey(middle, i - k);		// update thu tu moi cho middle
 		inorderUpdate(middle, i - k);		// update thu tu moi cho middle
 		//debug(middle);
 		Vertex tmpRoot = merge(left, middle);	
@@ -414,6 +405,72 @@ public class RopeProblem {
 		//updateKey(right, i-j-1); // update thu tu moi cho right
 		inorderUpdate(right, i-j-1); // update thu tu moi cho right
 		root = merge(tmpRoot, right);
+	}
+	
+	/**
+	 * no update key
+	 * */
+	void fastProcess3(int i, int j, int k) {
+		if (k == i)
+			return;
+		VertexPair pair = split2(root, i+1);	// split(0, i) 0-(i-1) 	i-max
+		Vertex left = pair.left;
+		Vertex middle = pair.right;
+		
+		// boi vi size da thay doi nen phai tru di 1 khoang la i
+		pair = split2(middle, j-i+2);		// split(j+1, max)	i-j  (j+1)-max
+		Vertex right = pair.right;
+		middle = pair.left;
+		
+		if (k < i) {
+			VertexPair pair1 = split2(left, k+1);	// ben trai se la phan tu < k
+			left = pair1.left;
+			Vertex left_right = pair1.right;
+			Vertex tmp = merge(left, middle);
+			root = merge(merge(tmp, left_right), right);
+		} else {
+			//VertexPair pair1 = split(right, k + (j - i + 1));	// k phai cong them j - i + 1 (so luong phan tu bi cat)
+			VertexPair pair1 = split2(right, k - i + 1);	// k phai cong them j - i + 1 (so luong phan tu bi cat)
+			Vertex right_left = pair1.left;
+			Vertex right_right = pair1.right;
+			Vertex tmp = merge(left, right_left);
+			root = merge(merge(tmp, middle), right_right);
+		}
+	}
+	
+	void fastProcess2(int i, int j, int k) {
+		// Replace this code with a faster implementation
+		if (k == i) {
+			return;
+		}
+		VertexPair pair = split(root, i);	// split(0, i) 0-(i-1) 	i-max
+		Vertex left = pair.left;
+		Vertex middle = pair.right;
+		
+		pair = split(middle, j+1);		// split(j+1, max)	i-j  (j+1)-max
+		Vertex right = pair.right;
+		middle = pair.left;
+		
+		if (k < i) {
+			VertexPair pair1 = split(left, k);
+			left = pair1.left;
+			Vertex left_right = pair1.right;
+			inorderUpdate(left_right, -(j-i+1));
+			inorderUpdate(middle, i - k);
+			Vertex tmp = merge(left, middle);
+			root = merge(merge(tmp, left_right), right);
+			//debug(root);
+		} else {
+			VertexPair pair1 = split(right, k + (j - i + 1));	// k phai cong them j - i + 1 (so luong phan tu bi cat)
+			Vertex right_left = pair1.left;
+			Vertex right_right = pair1.right;
+			inorderUpdate(right_left, (j-i+1));
+			inorderUpdate(middle, i - k);
+			Vertex tmp = merge(left, right_left);
+			root = merge(merge(tmp, middle), right_right);
+			//debug(root);
+		}
+		
 	}
 	
 	String result() {
@@ -436,7 +493,6 @@ public class RopeProblem {
         // traverse the tree 
         while (curr != null || s.size() > 0) 
         { 
-  
             while (curr !=  null) 
             { 
                 s.push(curr); 
@@ -494,13 +550,8 @@ public class RopeProblem {
 			int i = in.nextInt();
 			int j = in.nextInt();
 			int k = in.nextInt();
-			//process(i, j, k);
-			fastProcess(i, j, k);
-			//out.println(myResult());
-			//out.print(b);
-			//debug(root);
+			fastProcess3(i, j, k);		
 		}
-		//out.println(result());
 		out.print(inorderGetResult());
 		out.close();
 	}
