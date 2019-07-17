@@ -3,42 +3,49 @@ import java.util.*;
 
 public class Dijkstra {
 
+    public static int INFINITY = 999999;
 
+    // naive implement
     private static int distance(ArrayList<Integer>[] adj, ArrayList<Integer>[] cost, int s, int t) {
 
-        int[] prev = new int[adj.length];
+        boolean[] visited = new boolean[adj.length];  // known religion
         int[] dist = new int[adj.length];
 
         //// init
-        for (int i = 0; i < dist.length; i++)
-            dist[i] = 999999;
+        Arrays.fill(dist, INFINITY);
+        Arrays.fill(visited, false);
         dist[s] = 0;
+        visited[s] = true;
+        PriorityQueue<Node> queue = new PriorityQueue<>(new NodeComparetator());
+        // do algorithm
+        queue.add(new Node(s, 0));
 
-        //// free all
-        boolean atLeastOneRelaxed = false;
-        do {
-            atLeastOneRelaxed = false;
-            for (int i = 0; i < adj.length; i++)    //
-                for (int j = 0; j < adj[i].size(); j++) {
-                    int u = i;
-                    int v = adj[i].get(j);
-                    int wUV = cost[i].get(j);
-                    if (relax(dist, prev, wUV, u, v)) {
-                        atLeastOneRelaxed = true;
-                    }
+        while (!queue.isEmpty()) {
+            Node nextMinVertex = queue.poll();
+            int curNode = nextMinVertex.nodeID;
+            visited[curNode] = true;
+
+            ArrayList<Integer> adjOfNode = adj[curNode]; // dinh ke
+            for (int adjIndex = 0; adjIndex < adjOfNode.size(); adjIndex++) {
+                if (!visited[adjOfNode.get(adjIndex)]) {    // not visited adjection Node
+                    relax(dist, cost[curNode].get(adjIndex), curNode, adjOfNode.get(adjIndex));
+                    Node adjVertex = new Node(adjOfNode.get(adjIndex), dist[adjOfNode.get(adjIndex)]);
+                    queue.remove(adjVertex);
+                    queue.add(adjVertex);
                 }
-        } while (atLeastOneRelaxed);
-        if (dist[t] == 999999)
+            }
+
+        }
+        if (dist[t] == INFINITY)
             return -1;
         return dist[t];
     }
 
     // wUV: weight of edge U->V. Because it's directed graph so be careful with the order of u and v.
     // in simple words, relax(..., u, v) not same as relax(..., v, u)
-    private static boolean relax(int[] dist, int[] prev, int wUV, int u, int v) {
+    private static boolean relax(int[] dist, int wUV, int u, int v) {
         if (dist[v] > dist[u] + wUV) {
             dist[v] = dist[u] + wUV;
-            prev[v] = u;
             return true;
         }
         return false;
@@ -65,6 +72,38 @@ public class Dijkstra {
         int x = scanner.nextInt() - 1;
         int y = scanner.nextInt() - 1;
         System.out.println(distance(adj, cost, x, y));
+    }
+
+    public static class Node {
+        public int nodeID;
+        public int curDistance;
+        public Node(int node, int dist) {
+            this.nodeID = node;
+            this.curDistance = dist;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Node node = (Node) o;
+            return nodeID == node.nodeID;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(nodeID, curDistance);
+        }
+    }
+
+    public static class NodeComparetator implements Comparator<Node> {
+
+        @Override
+        public int compare(Node o1, Node o2) {
+            if (o1.curDistance == o2.curDistance)
+                return o1.nodeID - o2.nodeID; // node
+            return o1.curDistance - o2.curDistance;
+        }
     }
 }
 
