@@ -50,20 +50,12 @@ object RecFun extends RecFunInterface {
    * Exercise 3
    */
   def countChange(money: Int, coins: List[Int]): Int = {
-
-    def countChangeHelper(money: Int, coins: List[Int]): List[Int] = {
-      if (coins.isEmpty)
-        List()
-      else {
-        val moneyAfterCharge = money - coins.head
-        if (moneyAfterCharge >= 0)
-          moneyAfterCharge :: countChangeHelper(money, coins.tail)
-        else
-          countChangeHelper(money, coins.tail)
-      }
+    if (money < 0)
+      0
+    else if (coins.isEmpty)
+      if (money == 0) 1 else 0
+    else {
+      countChange(money - coins.head, coins) + countChange(money, coins.tail)
     }
-
-    0
-
   }
 }
