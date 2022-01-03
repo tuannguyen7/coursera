@@ -13,6 +13,7 @@ public class RoundUp {
         int result = 0;
 
         // your code
+        result = (int)Math.ceil((double)x/y);
 
         out.println(result);
 

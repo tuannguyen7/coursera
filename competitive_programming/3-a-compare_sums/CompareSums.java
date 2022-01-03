@@ -19,7 +19,16 @@ public class CompareSums {
         boolean sum_a_larger = false;
 
         // your code
+        long suma = 0, sumb = 0;
+        for (double ai : a) {
+            suma += (ai * 1000);
+        }
+        for (double bi : b) {
+            sumb += (bi * 1000);
+        }
 
+        equal_sum = suma == sumb;
+        sum_a_larger = suma > sumb;
         if (equal_sum)
             out.println("SUM(A)=SUM(B)");
         else {
