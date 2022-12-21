@@ -19,8 +19,20 @@ CHIP DMux4Way {
     // Put your code here:
     Not(in=sel[0], out=notS0);
     Not(in=sel[1], out=notS1);
-    Dmux(in=in, sel=sel[0], a=a, b=b);
-    Dmux(in=in, sel=sel[0], a=c, b=d);
-    Dmux(in=in, sel=sel[1], a=a, b=c);
-    Dmux(in=in, sel=sel[1], a=b, b=d);
+
+    // a
+    And(a=notS0, b=notS1, out=a1);
+    And(a=a1, b=in, out=a);
+
+    // b
+    And(a=sel[0], b=notS1, out=b1);
+    And(a=b1, b=in, out=b);
+
+    //c
+    And(a=notS0, b=sel[1], out=c1);
+    And(a=c1, b=in, out=c);
+
+    //c
+    And(a=sel[0], b=sel[1], out=d1);
+    And(a=d1, b=in, out=d);
 }
