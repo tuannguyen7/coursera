@@ -49,12 +49,15 @@ CHIP CPU {
 
     // loadARegister = 1 if the instruction is A instruction OR dest=A (C instruction)
     // instruction[5] = 1 => dest contains A register
-    Or(a=notOpcode, b=instruction[5], out=loadARegister); // computue the load of A register
+    And(a=instruction[15], b=instruction[5], out=destContainA);
+    Or(a=notOpcode, b=destContainA, out=loadARegister); // computue the load of A register
     ARegister(in=aAddress, load=loadARegister, out[0..14]=addressM, out=outRegisterA); // A register
     Mux16(a=outRegisterA, b=inM, sel=instruction[12], out=yALUInput);
 
     // D register
-    DRegister(in=ALUOutput, load=instruction[4], out=outRegisterD); // D register
+    // loadDRegister = 1 if the instruction is C instruction AND dest contains D
+    And(a=instruction[15], b=instruction[4], out=loadDRegister);
+    DRegister(in=ALUOutput, load=loadDRegister, out=outRegisterD); // D register
 
     ALU(x=outRegisterD, y=yALUInput, zx=instruction[11], nx=instruction[10], zy=instruction[9], ny=instruction[8], f=instruction[7], no=instruction[6], out=ALUOutput, out=outM, ng=ng, zr=zr);
 
@@ -76,5 +79,5 @@ CHIP CPU {
     PC(in=outRegisterA, load=shouldJump, inc=shouldNotJump, reset=reset, out[0..14]=pc);
 
     // writeM if C instruction and dest contains M
-    And(a=instruction[3], b=instruction[15], out=writeM);
+    And(a=instruction[15], b=instruction[3], out=writeM);
 }
