@@ -60,10 +60,8 @@ CHIP ALU {
 
    Mux16(a=xAndY, b=xSumY, sel=f, out=fXY); // func(x, y)
    Not16(in=fXY, out=nfXY);
-   Mux16(a=fXY, b=nfXY, sel=no, out[15]=isNegative, out[0..7]=halfOut1, out[8..15]=halfOut2, out=out);
-
    // ng
-   Mux(a=false, b=true, sel=isNegative, out=ng);
+   Mux16(a=fXY, b=nfXY, sel=no, out[15]=ng, out[0..7]=halfOut1, out[8..15]=halfOut2, out=out);
 
    // zr
    Or8Way(in=halfOut1, out=halfOr1);
