@@ -1,9 +1,11 @@
 course := "progfun2"
-assignment := "quickcheck"
+assignment := "streams"
 
-scalaVersion := "3.0.0"
+scalaVersion := "3.3.0"
+
 scalacOptions ++= Seq("-language:implicitConversions", "-deprecation")
+
 libraryDependencies ++= Seq(
   "org.scalameta" %% "munit" % "0.7.26" % Test,
-  "org.scalacheck" %% "scalacheck" % "1.15.4"
+  "org.scalacheck" %% "scalacheck" % "1.15.4" % Test
 )
