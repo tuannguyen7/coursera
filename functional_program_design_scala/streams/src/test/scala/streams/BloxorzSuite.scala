@@ -13,11 +13,13 @@ class BloxorzSuite extends munit.FunSuite:
     def solve(ls: List[Move]): Block =
       ls.foldLeft(startBlock) { case (block, move) =>
         require(block.isLegal) // The solution must always lead to legal blocks
-        move match
+        val nextBlock = move match
           case Left => block.left
           case Right => block.right
           case Up => block.up
           case Down => block.down
+
+        nextBlock
     }
 
   trait Level1 extends SolutionChecker:
@@ -34,6 +36,11 @@ class BloxorzSuite extends munit.FunSuite:
     import Move.*
     val optsolution = List(Right, Right, Down, Right, Right, Right, Down)
 
+
+  test("block") {
+    new Level1:
+      println(Block(Pos(4,4), Pos(4,4)).isLegal)
+  }
 
   test("terrain function level 1 (10pts)") {
     new Level1:
