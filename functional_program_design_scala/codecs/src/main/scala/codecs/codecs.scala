@@ -79,7 +79,6 @@ trait EncoderInstances:
   given Encoder[String] = Encoder.fromFunction(str => Json.Str(str))
 
   /** An encoder for `Boolean` values */
-  // TODO Define a given value of type `Encoder[Boolean]`
   given Encoder[Boolean] = Encoder.fromFunction(bool => Json.Bool(bool))
 
   /**
@@ -191,15 +190,16 @@ trait DecoderInstances:
     * using the given `decoder`. The resulting decoder succeeds only
     * if all the JSON array items are successfully decoded.
     */
-  given [A] (using decoder: Decoder[A]): Decoder[List[A]] = 
+  given [A] (using decoder: Decoder[A]): Decoder[List[A]] =
     Decoder.fromFunction {
-      case Json.Arr(arr) => {
+      case Json.Arr(arr) =>
         val x = arr.flatMap(decoder.decode)
         if (x.size != arr.size)
           None
-        else
+        else {
           Some(x)
-      }
+        }
+      case _ => None
     }
 
   /**
@@ -207,7 +207,11 @@ trait DecoderInstances:
     * the supplied `name` using the given `decoder`.
     */
   def field[A](name: String)(using decoder: Decoder[A]): Decoder[A] =
-    ???
+    Decoder.fromFunction {
+      case Json.Obj(obj) =>
+        decoder.decode(obj(name))
+      case _ => None
+    }
 
 
 case class Person(name: String, age: Int)
@@ -223,8 +227,18 @@ trait PersonCodecs:
       .transform[Person](user => (user.name, user.age))
 
   /** The corresponding decoder for `Person` */
-  given Decoder[Person] =
-    ???
+  given Decoder[Person] = Decoder.fromFunction({
+    case Json.Obj(obj) if obj.contains("name") && obj.contains("age") => {
+      val name = obj("name").decodeAs[String]
+      val age = obj("age").decodeAs[Int]
+      if (name.isEmpty || age.isEmpty)
+        None
+      else
+        Some(Person(name.get, age.get))
+    }
+    case _ => None
+  })
+
 
 
 case class Contacts(people: List[Person])
@@ -237,7 +251,27 @@ trait ContactsCodecs:
   // The JSON representation of a value of type `Contacts` should be
   // a JSON object with a single field named “people” containing an
   // array of values of type `Person` (reuse the `Person` codecs)
-  ()
+  given Encoder[Contacts] = Encoder.fromFunction {v =>
+    ObjectEncoder.field[List[Person]]("people").encode(v.people)
+  }
+
+  given Decoder[Contacts] = Decoder.fromFunction({
+    case Json.Obj(map) if map.contains("people") =>
+      val peopleDecoder = implicitly[Decoder[Person]]
+      map("people") match {
+        case Json.Arr(items) =>
+          val personDecoder = implicitly[Decoder[Person]]
+          val people = items.flatMap(peopleDecoder.decode)
+          if (people.size == items.size) {
+            Some(Contacts(people = people))
+          } else {
+            None
+          }
+        case _ => None
+      }
+    case _ =>
+      None
+  })
 
 
 // In case you want to try your code, here is a simple `Main`
@@ -254,9 +288,10 @@ object Main:
     val maybeJsonObj    = parseJson(""" { "name": "Alice", "age": 42 } """)
     val maybeJsonObj2   = parseJson(""" { "name": "Alice", "age": "42" } """)
     // Uncomment the following lines as you progress in the assignment
-    // println(maybeJsonString.flatMap(_.decodeAs[Int]))
-    // println(maybeJsonString.flatMap(_.decodeAs[String]))
-    // println(maybeJsonObj.flatMap(_.decodeAs[Person]))
-    // println(maybeJsonObj2.flatMap(_.decodeAs[Person]))
-    // println(renderJson(Person("Bob", 66)))
+    println(maybeJsonString.flatMap(_.decodeAs[Int]))
+    println(maybeJsonString.flatMap(_.decodeAs[String]))
+    println(maybeJsonObj.flatMap(_.decodeAs[Person]))
+    println(maybeJsonObj2.flatMap(_.decodeAs[Person]))
+    println(renderJson(Person("Bob", 66)))
+    println(parseJson("""{"people": []}""").flatMap(_.decodeAs[Contacts]))
 
